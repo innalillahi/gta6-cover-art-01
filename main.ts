@@ -1,50 +1,31 @@
-// Neon Coast Cover Studio — entrypoint for make.fun gta6-cover-art-01.
-// Copies app/ and screenshots/ into the output directory and writes
-// dossier.json with buildDossier from vendor/makefun-app.ts.
-// Runs offline and writes the same bytes on every run: no clocks, no
-// random values, files copied in sorted order.
-import { copyFile, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { buildDossier } from "./vendor/makefun-app.ts";
+/* Neon Coast Cover Studio — entrypoint.
+ * Hands the entry in: copies app/ and screenshots/ from this repository
+ * into the output directory and writes dossier.json with buildDossier
+ * from the kit's library (vendor/makefun-app.ts, unchanged).
+ * Runs on Node 22 with no install: `node main.ts`.
+ * Outside the grader, MAKEFUN_OUTPUT_DIR stands in for /output. */
 
-const REPO_ROOT = dirname(fileURLToPath(import.meta.url));
-const OUTPUT_DIR = resolve(process.env.MAKEFUN_OUTPUT_DIR ?? "/output");
-const TEXT_MAX_BYTES = 163840;
+import { buildDossier } from './vendor/makefun-app.ts';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-async function copyTree(src: string, dst: string): Promise<void> {
-  await mkdir(dst, { recursive: true });
-  const names = (await readdir(src)).sort();
-  for (const name of names) {
-    const from = join(src, name);
-    const to = join(dst, name);
-    const info = await stat(from);
-    if (info.isDirectory()) await copyTree(from, to);
-    else if (info.isFile()) await copyFile(from, to);
-  }
+const repoRoot = dirname(fileURLToPath(import.meta.url));
+const outDir = process.env.MAKEFUN_OUTPUT_DIR || '/output';
+
+mkdirSync(outDir, { recursive: true });
+for (const name of ['app', 'screenshots']) {
+  const dest = join(outDir, name);
+  if (existsSync(dest)) rmSync(dest, { recursive: true, force: true });
+  cpSync(join(repoRoot, name), dest, { recursive: true });
 }
+if (existsSync(join(outDir, 'dossier.json'))) rmSync(join(outDir, 'dossier.json'));
 
-async function countFiles(dir: string): Promise<number> {
-  let total = 0;
-  for (const name of (await readdir(dir)).sort()) {
-    const entry = join(dir, name);
-    const info = await stat(entry);
-    total += info.isDirectory() ? await countFiles(entry) : 1;
-  }
-  return total;
-}
-
-const appDir = join(REPO_ROOT, "app");
-const shotsDir = join(REPO_ROOT, "screenshots");
-const indexHtml = await readFile(join(appDir, "index.html"));
-if (indexHtml.length === 0) throw new Error("app/index.html is empty");
-const shotNames = (await readdir(shotsDir)).sort().filter((name) => !name.startsWith("."));
-if (shotNames.length < 3 || shotNames.length > 4) {
-  throw new Error(`screenshots/ must hold 3 or 4 images, found ${shotNames.length}`);
-}
-await copyTree(appDir, join(OUTPUT_DIR, "app"));
-await copyTree(shotsDir, join(OUTPUT_DIR, "screenshots"));
-const dossier = await buildDossier(REPO_ROOT, { text_max_bytes: TEXT_MAX_BYTES });
-await writeFile(join(OUTPUT_DIR, "dossier.json"), dossier);
-const appFiles = await countFiles(join(OUTPUT_DIR, "app"));
-console.log(`neon-coast: app files=${appFiles} screenshots=${shotNames.length} dossier bytes=${dossier.length}`);
+const dossier = buildDossier(outDir, {
+  text_max_bytes: 163840,
+  screenshots: { max: 4, max_bytes: 262144 },
+  app_max_files: 993,
+  app_max_bytes: 50331648,
+});
+writeFileSync(join(outDir, 'dossier.json'), dossier);
+console.log(`neon-coast-cover-studio: wrote ${outDir} (${dossier.length} byte dossier)`);
