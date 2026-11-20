@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Neon Coast — Cover Studio</title>
+<title>Neon Coast Cover Studio — GTA 6-style cover art maker</title>
+<meta name="description" content="Turn your photo into a GTA 6-style cast poster. Offline, on-device, PNG export in 1:1, 4:5 and 16:9.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,126 +13,123 @@
     <span class="brand-mark">NC</span>
     <div>
       <h1>NEON COAST <span>Cover Studio</span></h1>
-      <p>Turn any photo into a GTA-style cast poster. 100% offline — photos never leave your machine.</p>
+      <p>Your photo. Your cast. One sunset.</p>
     </div>
   </div>
   <div class="top-actions">
-    <button id="surpriseBtn" class="gold" title="Re-roll layout, grade, title, tagline, quote and cast roles">🎲 Surprise me</button>
-    <button id="undoBtn" title="Undo (Ctrl+Z)">↩ Undo</button>
-    <button id="redoBtn" title="Redo (Ctrl+Y)">↪ Redo</button>
-    <button id="exportBtn" class="primary">⬇ Export PNG</button>
+    <button id="surpriseBtn" type="button" class="btn btn-gold">🎲 Surprise me</button>
+    <button id="exportAllBtn" type="button" class="btn btn-pink">Export all 3 sizes</button>
   </div>
 </header>
 
-<main>
-  <aside class="controls">
-    <section>
+<main class="studio">
+  <section class="stage" aria-label="Poster preview">
+    <div id="dropZone" class="drop-zone">
+      <canvas id="preview" width="960" height="540"></canvas>
+      <p class="drop-hint">Drop a photo here, or pick a sample below — it lands on the selected panel.</p>
+    </div>
+    <div class="stage-bar">
+      <div class="aspect-group" role="group" aria-label="Poster size">
+        <button type="button" class="aspect-btn" data-aspect="square">1:1</button>
+        <button type="button" class="aspect-btn" data-aspect="portrait">4:5</button>
+        <button type="button" class="aspect-btn active" data-aspect="wide">16:9</button>
+      </div>
+      <div id="panelDots" class="panel-dots" aria-label="Select a panel"></div>
+      <p id="statusLine" class="status-line" role="status">Ready. Pick a sample or drop in your own photo.</p>
+    </div>
+  </section>
+
+  <aside class="controls" aria-label="Cover controls">
+    <section class="card">
       <h2>1 · Photos</h2>
-      <div id="dropzone" class="dropzone">
-        <p>Drop photos here or <label class="file-label">choose files<input id="fileInput" type="file" accept="image/*" multiple hidden></label></p>
-        <p id="photoCount" class="muted">No photos yet — add one or load the samples</p>
-      </div>
-      <div class="row">
-        <button id="samplesBtn">Load sample photos</button>
-        <button id="fillAllBtn" title="Fill every panel with the first photo">Fill all panels</button>
-      </div>
-      <div id="tray" class="tray"></div>
-      <p class="muted">Click a thumbnail to put that photo in the selected panel. Click a panel in the preview to select it, drag to move its photo, scroll to zoom.</p>
+      <p class="card-note">Tap a sample to fill the selected panel, or add your own. Photos never leave this device.</p>
+      <label class="btn btn-ghost file-label" for="fileInput">＋ Add your photos</label>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      <div id="sampleTray" class="sample-tray"></div>
     </section>
 
-    <section>
+    <section class="card">
       <h2>2 · Layout</h2>
-      <div id="layoutBtns" class="opts"></div>
+      <p class="card-note">Ten collages. The hero panel is the big close-up — Pop-Out Hero bursts it over the title.</p>
+      <div id="layoutGrid" class="layout-grid"></div>
     </section>
 
-    <section>
+    <section class="card">
       <h2>3 · Grade</h2>
-      <div id="gradeBtns" class="opts"></div>
-      <p class="muted">One warm grade unifies every panel into a single poster.</p>
+      <p class="card-note">One warm sunset grade across every panel, so the poster feels shot in a single golden hour.</p>
+      <div id="gradeGrid" class="grade-grid"></div>
     </section>
 
-    <section>
-      <h2>4 · Size</h2>
-      <div id="sizeBtns" class="opts"></div>
-    </section>
-
-    <section>
-      <h2>5 · Panel <span id="panelLabel" class="muted">Panel 1</span></h2>
-      <label>Role tag
-        <input id="roleInput" type="text" value="THE DRIVER" maxlength="24">
+    <section class="card">
+      <h2>4 · Lettering</h2>
+      <p class="card-note">The title, tagline and press quote are invented for you — edit any of them.</p>
+      <label class="field">Title
+        <input id="titleInput" type="text" maxlength="28" autocomplete="off">
       </label>
-      <label>Panel grade
+      <label class="field">Script subtitle
+        <input id="subtitleInput" type="text" maxlength="48" autocomplete="off">
+      </label>
+      <label class="field">Tagline
+        <input id="taglineInput" type="text" maxlength="64" autocomplete="off">
+      </label>
+      <label class="field">Press quote
+        <input id="quoteInput" type="text" maxlength="64" autocomplete="off">
+      </label>
+      <div class="field-row">
+        <label class="field">Quote source
+          <input id="sourceInput" type="text" maxlength="32" autocomplete="off">
+        </label>
+        <label class="field">Volume chip
+          <input id="volumeInput" type="text" maxlength="12" autocomplete="off">
+        </label>
+      </div>
+      <label class="field">Gold seal
+        <input id="sealInput" type="text" maxlength="24" autocomplete="off">
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>5 · Selected panel</h2>
+      <p class="card-note"><span id="panelName">Panel 1</span> — the crop keeps faces in frame: drag the sliders to re-frame.</p>
+      <label class="field">Cast tag
+        <input id="roleInput" type="text" maxlength="18" autocomplete="off" placeholder="THE DRIVER">
+      </label>
+      <button id="autoTagBtn" type="button" class="btn btn-ghost btn-small">Auto cast tag</button>
+      <label class="field">Zoom
+        <input id="zoomRange" type="range" min="1" max="2.5" step="0.05" value="1">
+      </label>
+      <label class="field">Pan left — right
+        <input id="panXRange" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <label class="field">Pan up — down
+        <input id="panYRange" type="range" min="0" max="1" step="0.01" value="0.38">
+      </label>
+      <label class="field">Panel grade
         <select id="panelGrade"></select>
       </label>
-      <div id="cutoutRow">
-        <label class="check"><input id="cutoutToggle" type="checkbox"> Pop-out hero (remove background)</label>
-        <label>Cut-out tolerance <span id="cutoutToleranceVal">20</span>
-          <input id="cutoutTolerance" type="range" min="8" max="60" value="20">
-        </label>
+      <div class="toggles">
+        <label class="toggle"><input id="halftoneToggle" type="checkbox"> Halftone dots</label>
+        <label class="toggle"><input id="vignetteToggle" type="checkbox" checked> Vignette</label>
+        <label class="toggle"><input id="grainToggle" type="checkbox" checked> Film grain</label>
       </div>
     </section>
 
-    <section>
-      <h2>6 · Lettering</h2>
-      <label>Title
-        <input id="titleInput" type="text" value="SUNSET RUN" maxlength="24">
-      </label>
-      <label>Script subtitle
-        <input id="subtitleInput" type="text" value="palm nights on the neon coast" maxlength="48">
-      </label>
-      <label>Tagline chip
-        <input id="taglineInput" type="text" value="FIVE FRIENDS · ONE COAST · NO WAY BACK" maxlength="64">
-      </label>
-      <label>Press quote
-        <input id="quoteInput" type="text" value="EVERY FRAME A POSTCARD" maxlength="64">
-      </label>
-      <div class="row2">
-        <label>Quote source
-          <input id="quoteSourceInput" type="text" value="THE PALM JOURNAL" maxlength="32">
-        </label>
-        <label>Volume chip
-          <input id="volumeInput" type="text" value="VOL. 1" maxlength="16">
-        </label>
-      </div>
-      <div class="row2">
-        <label>Release
-          <select id="releaseInput">
-            <option>COMING SOON</option>
-            <option>NOW SHOWING</option>
-          </select>
-        </label>
-        <label>Gold seal
-          <select id="sealInput">
-            <option>BEST CAST</option>
-            <option>SEASON ONE</option>
-            <option>100% ORIGINAL</option>
-            <option>HOT SUMMER '26</option>
-            <option>ORIGINAL COVER ART</option>
-            <option value="">— none —</option>
-          </select>
-        </label>
-      </div>
-      <label>Title size <span id="titleSizeVal">100%</span>
-        <input id="titleSize" type="range" min="70" max="130" value="100">
-      </label>
-      <div class="checks">
-        <label class="check"><input id="grainToggle" type="checkbox" checked> Film grain</label>
-        <label class="check"><input id="vignetteToggle" type="checkbox" checked> Vignette</label>
-        <label class="check"><input id="halftoneToggle" type="checkbox" checked> Halftone dots</label>
+    <section class="card">
+      <h2>6 · Export PNG</h2>
+      <p class="card-note">Full-size PNG, ready to post. The wide 16:9 shot is the judge's view.</p>
+      <div class="export-row">
+        <button type="button" class="btn btn-gold export-btn" data-size="square">1:1 · 1080²</button>
+        <button type="button" class="btn btn-gold export-btn" data-size="portrait">4:5 · 1080×1350</button>
+        <button type="button" class="btn btn-gold export-btn" data-size="wide">16:9 · 1920×1080</button>
       </div>
     </section>
   </aside>
-
-  <section class="stage">
-    <canvas id="preview" width="860" height="1080"></canvas>
-    <p class="hint">Live preview — click a panel to select it · drag to move the photo · scroll to zoom</p>
-  </section>
 </main>
 
-<footer>
-  <p>Photos never leave your machine. Lettering: Anton &amp; Pacifico (SIL Open Font License, files under app/fonts/). No Rockstar Games logo, artwork, character or font.</p>
+<footer class="foot">
+  <p>Offline by design — no upload, no account, no tracking. Typefaces: Anton &amp; Pacifico (SIL Open Font License, see app/fonts/OFL.txt). Original artwork only; not affiliated with Rockstar Games.</p>
 </footer>
 
-<script type="module" src="./src/main.js"></script>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

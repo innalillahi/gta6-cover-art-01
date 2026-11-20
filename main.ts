@@ -1,49 +1,50 @@
-// Neon Coast Cover Studio: hand-in for make.fun gta6-cover-art-01 (Node 22,
-// standard library only). The entry is this repo's app/ folder: a static
-// offline web app (app/index.html plus its ES modules, fonts and sample
-// photos — every asset is a file under app/ or a data: URI, no network
-// request at runtime). This program copies app/ and screenshots/ from
-// beside this file into /output (or $MAKEFUN_OUTPUT_DIR outside the
-// grader) and writes /output/dossier.json, the summary the judge reads,
-// using the vendored make.fun library.
-//
-// Try it locally first: serve app/ with any static server, e.g.
-// `python3 -m http.server 8123 --directory app`, then open
-// http://localhost:8123 in desktop Chrome.
-// Hand it in locally with: mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// Neon Coast Cover Studio — entrypoint for make.fun gta6-cover-art-01.
+// Copies app/ and screenshots/ into the output directory and writes
+// dossier.json with buildDossier from vendor/makefun-app.ts.
+// Runs offline and writes the same bytes on every run: no clocks, no
+// random values, files copied in sorted order.
+import { copyFile, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildDossier } from "./vendor/makefun-app.ts";
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { buildDossier } from './vendor/makefun-app.ts';
+const REPO_ROOT = dirname(fileURLToPath(import.meta.url));
+const OUTPUT_DIR = resolve(process.env.MAKEFUN_OUTPUT_DIR ?? "/output");
+const TEXT_MAX_BYTES = 163840;
 
-// Repo root = the directory holding this file; output goes to /output in
-// the grader, or $MAKEFUN_OUTPUT_DIR when run by hand.
-const here = fileURLToPath(new URL('.', import.meta.url));
-const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
-
-mkdirSync(out, { recursive: true });
-cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
-mkdirSync(join(out, 'screenshots'), { recursive: true });
-if (existsSync(join(here, 'screenshots'))) {
-  cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
+async function copyTree(src: string, dst: string): Promise<void> {
+  await mkdir(dst, { recursive: true });
+  const names = (await readdir(src)).sort();
+  for (const name of names) {
+    const from = join(src, name);
+    const to = join(dst, name);
+    const info = await stat(from);
+    if (info.isDirectory()) await copyTree(from, to);
+    else if (info.isFile()) await copyFile(from, to);
+  }
 }
 
-// The scorer's own caps (reference/gate.json): only text_max_bytes shapes
-// the dossier bytes; the other limits refuse an entry the scorer would
-// refuse (more than 4 screenshots or one over 256 KiB; more than 993
-// files in app/ or 48 MiB of app files in all, or a path under app/ over
-// 1000 bytes; app/ counts beside /output's own 1000-entry cap, its
-// screenshots/ and dossier.json).
-writeFileSync(
-  join(out, 'dossier.json'),
-  buildDossier(out, {
-    text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
-    app_max_files: 993,
-    app_max_bytes: 50331648,
-    app_path_max_bytes: 1000,
-  }),
-);
+async function countFiles(dir: string): Promise<number> {
+  let total = 0;
+  for (const name of (await readdir(dir)).sort()) {
+    const entry = join(dir, name);
+    const info = await stat(entry);
+    total += info.isDirectory() ? await countFiles(entry) : 1;
+  }
+  return total;
+}
 
-console.log(`hand-in written to ${out}`);
+const appDir = join(REPO_ROOT, "app");
+const shotsDir = join(REPO_ROOT, "screenshots");
+const indexHtml = await readFile(join(appDir, "index.html"));
+if (indexHtml.length === 0) throw new Error("app/index.html is empty");
+const shotNames = (await readdir(shotsDir)).sort().filter((name) => !name.startsWith("."));
+if (shotNames.length < 3 || shotNames.length > 4) {
+  throw new Error(`screenshots/ must hold 3 or 4 images, found ${shotNames.length}`);
+}
+await copyTree(appDir, join(OUTPUT_DIR, "app"));
+await copyTree(shotsDir, join(OUTPUT_DIR, "screenshots"));
+const dossier = await buildDossier(REPO_ROOT, { text_max_bytes: TEXT_MAX_BYTES });
+await writeFile(join(OUTPUT_DIR, "dossier.json"), dossier);
+const appFiles = await countFiles(join(OUTPUT_DIR, "app"));
+console.log(`neon-coast: app files=${appFiles} screenshots=${shotNames.length} dossier bytes=${dossier.length}`);
