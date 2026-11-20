@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Coast — Cover Studio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">NC</span>
+    <div>
+      <h1>NEON COAST <span>Cover Studio</span></h1>
+      <p>Turn any photo into a GTA-style cast poster. 100% offline — photos never leave your machine.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="surpriseBtn" class="gold" title="Re-roll layout, grade, title, tagline, quote and cast roles">🎲 Surprise me</button>
+    <button id="undoBtn" title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button id="redoBtn" title="Redo (Ctrl+Y)">↪ Redo</button>
+    <button id="exportBtn" class="primary">⬇ Export PNG</button>
+  </div>
+</header>
+
+<main>
+  <aside class="controls">
+    <section>
+      <h2>1 · Photos</h2>
+      <div id="dropzone" class="dropzone">
+        <p>Drop photos here or <label class="file-label">choose files<input id="fileInput" type="file" accept="image/*" multiple hidden></label></p>
+        <p id="photoCount" class="muted">No photos yet — add one or load the samples</p>
+      </div>
+      <div class="row">
+        <button id="samplesBtn">Load sample photos</button>
+        <button id="fillAllBtn" title="Fill every panel with the first photo">Fill all panels</button>
+      </div>
+      <div id="tray" class="tray"></div>
+      <p class="muted">Click a thumbnail to put that photo in the selected panel. Click a panel in the preview to select it, drag to move its photo, scroll to zoom.</p>
+    </section>
+
+    <section>
+      <h2>2 · Layout</h2>
+      <div id="layoutBtns" class="opts"></div>
+    </section>
+
+    <section>
+      <h2>3 · Grade</h2>
+      <div id="gradeBtns" class="opts"></div>
+      <p class="muted">One warm grade unifies every panel into a single poster.</p>
+    </section>
+
+    <section>
+      <h2>4 · Size</h2>
+      <div id="sizeBtns" class="opts"></div>
+    </section>
+
+    <section>
+      <h2>5 · Panel <span id="panelLabel" class="muted">Panel 1</span></h2>
+      <label>Role tag
+        <input id="roleInput" type="text" value="THE DRIVER" maxlength="24">
+      </label>
+      <label>Panel grade
+        <select id="panelGrade"></select>
+      </label>
+      <div id="cutoutRow">
+        <label class="check"><input id="cutoutToggle" type="checkbox"> Pop-out hero (remove background)</label>
+        <label>Cut-out tolerance <span id="cutoutToleranceVal">20</span>
+          <input id="cutoutTolerance" type="range" min="8" max="60" value="20">
+        </label>
+      </div>
+    </section>
+
+    <section>
+      <h2>6 · Lettering</h2>
+      <label>Title
+        <input id="titleInput" type="text" value="SUNSET RUN" maxlength="24">
+      </label>
+      <label>Script subtitle
+        <input id="subtitleInput" type="text" value="palm nights on the neon coast" maxlength="48">
+      </label>
+      <label>Tagline chip
+        <input id="taglineInput" type="text" value="FIVE FRIENDS · ONE COAST · NO WAY BACK" maxlength="64">
+      </label>
+      <label>Press quote
+        <input id="quoteInput" type="text" value="EVERY FRAME A POSTCARD" maxlength="64">
+      </label>
+      <div class="row2">
+        <label>Quote source
+          <input id="quoteSourceInput" type="text" value="THE PALM JOURNAL" maxlength="32">
+        </label>
+        <label>Volume chip
+          <input id="volumeInput" type="text" value="VOL. 1" maxlength="16">
+        </label>
+      </div>
+      <div class="row2">
+        <label>Release
+          <select id="releaseInput">
+            <option>COMING SOON</option>
+            <option>NOW SHOWING</option>
+          </select>
+        </label>
+        <label>Gold seal
+          <select id="sealInput">
+            <option>BEST CAST</option>
+            <option>SEASON ONE</option>
+            <option>100% ORIGINAL</option>
+            <option>HOT SUMMER '26</option>
+            <option>ORIGINAL COVER ART</option>
+            <option value="">— none —</option>
+          </select>
+        </label>
+      </div>
+      <label>Title size <span id="titleSizeVal">100%</span>
+        <input id="titleSize" type="range" min="70" max="130" value="100">
+      </label>
+      <div class="checks">
+        <label class="check"><input id="grainToggle" type="checkbox" checked> Film grain</label>
+        <label class="check"><input id="vignetteToggle" type="checkbox" checked> Vignette</label>
+        <label class="check"><input id="halftoneToggle" type="checkbox" checked> Halftone dots</label>
+      </div>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <canvas id="preview" width="860" height="1080"></canvas>
+    <p class="hint">Live preview — click a panel to select it · drag to move the photo · scroll to zoom</p>
+  </section>
+</main>
+
+<footer>
+  <p>Photos never leave your machine. Lettering: Anton &amp; Pacifico (SIL Open Font License, files under app/fonts/). No Rockstar Games logo, artwork, character or font.</p>
+</footer>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
